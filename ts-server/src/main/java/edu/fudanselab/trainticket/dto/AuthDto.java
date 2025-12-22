@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 public class AuthDto {
 
     private String userId;
-    private String userName;
+    private String username;
     private String password;
 
 }

@@ -26,7 +26,7 @@ public class User {
     @Column(length = 36, name = "user_id")
     private String userId;
     @Column(name = "user_name")
-    private String userName;
+    private String username;
     private String password;
 
     private int gender;

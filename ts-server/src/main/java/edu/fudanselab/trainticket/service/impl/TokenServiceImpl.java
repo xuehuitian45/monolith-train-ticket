@@ -70,7 +70,7 @@ public class TokenServiceImpl implements TokenService {
 
             // failed code
             if (!id) {
-                LOGGER.info("[getToken][Verification failed][userName: {}]", username);
+                LOGGER.info("[getToken][Verification failed][username: {}]", username);
                 return new Response<>(0, "Verification failed.", null);
             }
         }

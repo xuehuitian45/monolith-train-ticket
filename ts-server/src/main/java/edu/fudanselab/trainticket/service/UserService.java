@@ -12,7 +12,7 @@ public interface UserService {
 
     Response getAllUsers(HttpHeaders headers);
 
-    Response findByUserName(String userName, HttpHeaders headers);
+    Response findByUsername(String username, HttpHeaders headers);
     Response findByUserId(String userId, HttpHeaders headers);
 
 

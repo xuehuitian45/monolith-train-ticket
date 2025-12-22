@@ -47,7 +47,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Response saveUser(UserDto userDto, HttpHeaders headers) {
-        LOGGER.info("[saveUser][Save User Name][user name: {}]", userDto.getUserName());
+        LOGGER.info("[saveUser][Save User Name][user name: {}]", userDto.getUsername());
         String userId = userDto.getUserId();
         if (userDto.getUserId() == null) {
             userId = UUID.randomUUID().toString();
@@ -55,7 +55,7 @@ public class UserServiceImpl implements UserService {
 
         User user = User.builder()
                 .userId(userId)
-                .userName(userDto.getUserName())
+                .username(userDto.getUsername())
                 .password(userDto.getPassword())
                 .gender(userDto.getGender())
                 .documentType(userDto.getDocumentType())
@@ -63,11 +63,11 @@ public class UserServiceImpl implements UserService {
                 .email(userDto.getEmail()).build();
 
         // avoid same user name
-        User user1 = userRepository.findByUserName(userDto.getUserName());
+        User user1 = userRepository.findByUsername(userDto.getUsername());
         if (user1 == null) {
 
             createDefaultAuthUser(AuthDto.builder().userId(userId + "")
-                    .userName(user.getUserName())
+                    .username(user.getUsername())
                     .password(user.getPassword()).build());
 
             User userSaveResult = userRepository.save(user);
@@ -114,12 +114,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Response findByUserName(String userName, HttpHeaders headers) {
-        User user = userRepository.findByUserName(userName);
+    public Response findByUsername(String username, HttpHeaders headers) {
+        User user = userRepository.findByUsername(username);
         if (user != null) {
             return new Response<>(1, "Find User Success", user);
         }
-        UserServiceImpl.LOGGER.warn("[findByUserName][Get user by name warn,user is null][UserName: {}]",userName);
+        UserServiceImpl.LOGGER.warn("[findByUsername][Get user by name warn,user is null][Username: {}]",username);
         return new Response<>(0, "No User", null);
     }
 
@@ -160,7 +160,7 @@ public class UserServiceImpl implements UserService {
             User newUser = User.builder().email(userDto.getEmail())
                     .password(userDto.getPassword())
                     .userId(oldUser.getUserId())
-                    .userName(userDto.getUserName())
+                    .username(userDto.getUsername())
                     .gender(userDto.getGender())
                     .documentNum(userDto.getDocumentNum())
                     .documentType(userDto.getDocumentType()).build();

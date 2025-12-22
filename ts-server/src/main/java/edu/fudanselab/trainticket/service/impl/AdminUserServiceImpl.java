@@ -98,12 +98,12 @@ public class AdminUserServiceImpl implements AdminUserService {
                 requestEntity,
                 Response.class);
 
-        String userName = userDto.getUserName();
+        String username = userDto.getUsername();
         if (re.getBody() == null || re.getBody().getStatus() != 1) {
-            AdminUserServiceImpl.LOGGER.error("[updateUser][receive response][Update user error][userName: {}]", userName);
+            AdminUserServiceImpl.LOGGER.error("[updateUser][receive response][Update user error][username: {}]", username);
             return new Response<>(0, "Update user error", null);
         }
-        AdminUserServiceImpl.LOGGER.info("[updateUser][Update user success][userName: {}]", userName);
+        AdminUserServiceImpl.LOGGER.info("[updateUser][Update user success][username: {}]", username);
         return re.getBody();
     }
 
@@ -120,12 +120,12 @@ public class AdminUserServiceImpl implements AdminUserService {
                 new ParameterizedTypeReference<Response<User>>() {
                 });
 
-        String userName = userDto.getUserName();
+        String username = userDto.getUsername();
         if (re.getBody() == null || re.getBody().getStatus() != 1) {
-            AdminUserServiceImpl.LOGGER.error("[addUser][receive response][Add user error][userName: {}]", userName);
+            AdminUserServiceImpl.LOGGER.error("[addUser][receive response][Add user error][username: {}]", username);
             return new Response<>(0, "Add user error", null);
         }
-        AdminUserServiceImpl.LOGGER.info("[addUser][Add user success][userName: {}]", userName);
+        AdminUserServiceImpl.LOGGER.info("[addUser][Add user success][username: {}]", username);
         return re.getBody();
     }
 }

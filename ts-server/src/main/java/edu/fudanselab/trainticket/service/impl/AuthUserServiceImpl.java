@@ -55,7 +55,7 @@ public class AuthUserServiceImpl implements AuthUserService {
      */
     @Override
     public AuthUser createDefaultAuthUser(AuthDto dto) {
-        LOGGER.info("[createDefaultAuthUser][Register User Info][AuthDto name: {}]", dto.getUserName());
+        LOGGER.info("[createDefaultAuthUser][Register User Info][AuthDto name: {}]", dto.getUsername());
 
         // 如果上游没有传 userId，这里生成一个新的，避免 JPA 要求手动分配 ID 时抛异常
         String userId = dto.getUserId();
@@ -65,7 +65,7 @@ public class AuthUserServiceImpl implements AuthUserService {
 
         AuthUser user = AuthUser.builder()
                 .userId(userId)
-                .username(dto.getUserName())
+                .username(dto.getUsername())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .roles(new HashSet<>(Arrays.asList(AuthConstant.ROLE_USER)))
                 .build();
@@ -93,7 +93,7 @@ public class AuthUserServiceImpl implements AuthUserService {
      * @param user
      */
     private void checkUserCreateInfo(AuthUser user) throws UserOperationException {
-        LOGGER.info("[checkUserCreateInfo][Check user create info][userId: {}, userName: {}]", user.getUserId(), user.getUsername());
+        LOGGER.info("[checkUserCreateInfo][Check user create info][userId: {}, username: {}]", user.getUserId(), user.getUsername());
         List<String> infos = new ArrayList<>();
 
         if (null == user.getUsername() || "".equals(user.getUsername())) {

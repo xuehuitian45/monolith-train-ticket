@@ -28,10 +28,10 @@ public class UserInitUser implements CommandLineRunner {
 
     @Override
     public void run(String... strings) throws Exception {
-        User whetherExistUser = userRepository.findByUserName("fdse_microservice");
+        User whetherExistUser = userRepository.findByUsername("fdse_microservice");
         User user = User.builder()
                 .userId("4d2a46c7-71cb-4cf1-b5bb-b68406d9da6f")
-                .userName("fdse_microservice")
+                .username("fdse_microservice")
                 .password("111111")
                 .gender(1)
                 .documentType(1)

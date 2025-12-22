@@ -37,10 +37,10 @@ public class UserController {
         return ok(userService.getAllUsers(headers));
     }
 
-    @GetMapping("/{userName}")
-    public ResponseEntity<Response> getUserByUserName(@PathVariable String userName, @RequestHeader HttpHeaders headers) {
-        UserController.LOGGER.info("[getUserByUserName][Get user by user name][UserName: {}]",userName);
-        return ok(userService.findByUserName(userName, headers));
+    @GetMapping("/{username}")
+    public ResponseEntity<Response> getUserByUsername(@PathVariable String username, @RequestHeader HttpHeaders headers) {
+        UserController.LOGGER.info("[getUserByUsername][Get user by user name][Username: {}]",username);
+        return ok(userService.findByUsername(username, headers));
     }
     @GetMapping("/id/{userId}")
     public ResponseEntity<Response> getUserByUserId(@PathVariable String userId, @RequestHeader HttpHeaders headers) {
@@ -50,7 +50,7 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<Response> registerUser(@RequestBody UserDto userDto, @RequestHeader HttpHeaders headers) {
-        UserController.LOGGER.info("[registerUser][Register user][UserName: {}]",userDto.getUserName());
+        UserController.LOGGER.info("[registerUser][Register user][Username: {}]",userDto.getUsername());
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.saveUser(userDto, headers));
     }
 

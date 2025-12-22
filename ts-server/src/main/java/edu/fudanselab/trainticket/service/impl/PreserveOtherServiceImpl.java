@@ -268,7 +268,7 @@ public class PreserveOtherServiceImpl implements PreserveOtherService {
         notifyInfo.setEmail(getUser.getEmail());
         notifyInfo.setStartPlace(order.getFrom());
         notifyInfo.setEndPlace(order.getTo());
-        notifyInfo.setUsername(getUser.getUserName());
+        notifyInfo.setUsername(getUser.getUsername());
         notifyInfo.setSeatNumber(order.getSeatNumber());
         notifyInfo.setOrderNumber(order.getId().toString());
         notifyInfo.setPrice(order.getPrice());

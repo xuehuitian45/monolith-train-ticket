@@ -36,14 +36,14 @@ public class AdminUserController {
 
     @PutMapping
     public HttpEntity updateUser(@RequestBody UserDto userDto, @RequestHeader HttpHeaders headers) {
-        logger.info("[updateUser][Update User][userName: {}]", userDto.getUserName());
+        logger.info("[updateUser][Update User][username: {}]", userDto.getUsername());
         return ok(adminUserService.updateUser(userDto, headers));
     }
 
 
     @PostMapping
     public HttpEntity addUser(@RequestBody UserDto userDto, @RequestHeader HttpHeaders headers) {
-        logger.info("[addUser][Add user][userName: {}]", userDto.getUserName());
+        logger.info("[addUser][Add user][username: {}]", userDto.getUsername());
         return ok(adminUserService.addUser(userDto, headers));
     }
 
