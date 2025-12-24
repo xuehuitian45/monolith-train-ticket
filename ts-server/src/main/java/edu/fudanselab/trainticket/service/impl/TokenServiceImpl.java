@@ -76,15 +76,23 @@ public class TokenServiceImpl implements TokenService {
         }
 
         // verify username and password
+        // First check if user exists
+        AuthUser checkUser = authUserRepository.findFirstByUsername(username).orElse(null);
+        if (checkUser == null) {
+            LOGGER.warn("[getToken][User not found][username: {}]", username);
+            return new Response<>(0, "Incorrect username or password.", null);
+        }
+        LOGGER.info("[getToken][User found][username: {}, password hash: {}]", username, checkUser.getPassword());
+        
         UsernamePasswordAuthenticationToken upat = new UsernamePasswordAuthenticationToken(username, password);
         try {
             authenticationManager.authenticate(upat);
         } catch (AuthenticationException e) {
-            LOGGER.warn("[getToken][Incorrect username or password][username: {}, password: {}]", username, password);
+            LOGGER.warn("[getToken][Incorrect username or password][username: {}, password: {}, error: {}]", username, password, e.getMessage());
             return new Response<>(0, "Incorrect username or password.", null);
         }
 
-        AuthUser authUser = authUserRepository.findByUsername(username)
+        AuthUser authUser = authUserRepository.findFirstByUsername(username)
                 .orElseThrow(() -> new UserOperationException(MessageFormat.format(
                         InfoConstant.USER_NAME_NOT_FOUND_1, username
                 )));

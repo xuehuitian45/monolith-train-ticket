@@ -28,11 +28,13 @@ public class BasicController {
     private static final Logger logger = LoggerFactory.getLogger(BasicController.class);
 
     @GetMapping(path = "/welcome")
+    // 🆗
     public String home(@RequestHeader HttpHeaders headers) {
         return "Welcome to [ Basic Service ] !";
     }
 
     @PostMapping(value = "/basic/travel")
+    // 🆗
     public HttpEntity queryForTravel(@RequestBody Travel info, @RequestHeader HttpHeaders headers) {
         // TravelResult
         logger.info("[queryForTravel][Query for travel][Travel: {}]", info.toString());
@@ -40,6 +42,7 @@ public class BasicController {
     }
 
     @PostMapping(value = "/basic/travels")
+    // 🆗
     public HttpEntity queryForTravels(@RequestBody List<Travel> infos, @RequestHeader HttpHeaders headers) {
         // TravelResult
         logger.info("[queryForTravels][Query for travels][Travels: {}]", infos);
@@ -47,6 +50,7 @@ public class BasicController {
     }
 
     @GetMapping(value = "/basic/{stationName}")
+    // 🆗
     public HttpEntity queryForStationId(@PathVariable String stationName, @RequestHeader HttpHeaders headers) {
         // String id
         logger.info("[queryForStationId][Query for stationId by stationName][stationName: {}]", stationName);

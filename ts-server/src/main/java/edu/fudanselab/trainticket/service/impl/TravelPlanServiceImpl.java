@@ -51,40 +51,111 @@ public class TravelPlanServiceImpl implements TravelPlanService {
 
     @Override
     public Response getTransferSearch(TransferTravelInfo info, HttpHeaders headers) {
+        // 1. 前置入参校验（源头避免无效请求）
+        if (info == null) {
+            LOGGER.error("[getTransferSearch] TransferTravelInfo is null");
+            return new Response<>(0, "Invalid request: TransferTravelInfo cannot be null", null);
+        }
+        // 校验核心字段非空
+        if (info.getTravelDate() == null
+                || info.getStartStation() == null || info.getStartStation().trim().isEmpty()
+                || info.getViaStation() == null || info.getViaStation().trim().isEmpty()
+                || info.getEndStation() == null || info.getEndStation().trim().isEmpty()) {
+            LOGGER.error("[getTransferSearch] Invalid TransferTravelInfo: travelDate/startStation/viaStation/endStation cannot be empty");
+            return new Response<>(0, "Invalid request: travelDate/startStation/viaStation/endStation cannot be empty", null);
+        }
 
+        // 2. 构建第一段行程查询参数（安全处理日期转换）
         TripInfo queryInfoFirstSection = new TripInfo();
-        queryInfoFirstSection.setDepartureTime(StringUtils.Date2String(info.getTravelDate()));
+        try {
+            // 安全转换日期：避免Date2String处理null
+            String departureTime = StringUtils.Date2String(info.getTravelDate());
+            queryInfoFirstSection.setDepartureTime(departureTime == null ? "" : departureTime);
+        } catch (Exception e) {
+            LOGGER.error("[getTransferSearch] Failed to convert travelDate to string", e);
+            queryInfoFirstSection.setDepartureTime(""); // 兜底空字符串
+        }
         queryInfoFirstSection.setStartPlace(info.getStartStation());
         queryInfoFirstSection.setEndPlace(info.getViaStation());
 
-        List<TripResponse> firstSectionFromHighSpeed;
-        List<TripResponse> firstSectionFromNormal;
-        firstSectionFromHighSpeed = tripsFromHighSpeed(queryInfoFirstSection, headers);
-        firstSectionFromNormal = tripsFromNormal(queryInfoFirstSection, headers);
+        // 3. 查询第一段行程（空值兜底+异常捕获）
+        List<TripResponse> firstSectionFromHighSpeed = new ArrayList<>();
+        List<TripResponse> firstSectionFromNormal = new ArrayList<>();
+        try {
+            List<TripResponse> tempHigh = tripsFromHighSpeed(queryInfoFirstSection, headers);
+            if (tempHigh != null) {
+                firstSectionFromHighSpeed = tempHigh;
+            }
+        } catch (Exception e) {
+            LOGGER.error("[getTransferSearch] Failed to get first section high speed trips", e);
+            // 异常时仍返回空列表，不终止逻辑
+        }
+        try {
+            List<TripResponse> tempNormal = tripsFromNormal(queryInfoFirstSection, headers);
+            if (tempNormal != null) {
+                firstSectionFromNormal = tempNormal;
+            }
+        } catch (Exception e) {
+            LOGGER.error("[getTransferSearch] Failed to get first section normal trips", e);
+        }
 
-        TripInfo queryInfoSecondSectoin = new TripInfo();
-        queryInfoSecondSectoin.setDepartureTime(StringUtils.Date2String(info.getTravelDate()));
-        queryInfoSecondSectoin.setStartPlace(info.getViaStation());
-        queryInfoSecondSectoin.setEndPlace(info.getEndStation());
+        // 4. 构建第二段行程查询参数
+        TripInfo queryInfoSecondSection = new TripInfo();
+        try {
+            String departureTime = StringUtils.Date2String(info.getTravelDate());
+            queryInfoSecondSection.setDepartureTime(departureTime == null ? "" : departureTime);
+        } catch (Exception e) {
+            LOGGER.error("[getTransferSearch] Failed to convert travelDate to string for second section", e);
+            queryInfoSecondSection.setDepartureTime("");
+        }
+        queryInfoSecondSection.setStartPlace(info.getViaStation());
+        queryInfoSecondSection.setEndPlace(info.getEndStation());
 
-        List<TripResponse> secondSectionFromHighSpeed;
-        List<TripResponse> secondSectionFromNormal;
-        secondSectionFromHighSpeed = tripsFromHighSpeed(queryInfoSecondSectoin, headers);
-        secondSectionFromNormal = tripsFromNormal(queryInfoSecondSectoin, headers);
+        // 5. 查询第二段行程（空值兜底+异常捕获）
+        List<TripResponse> secondSectionFromHighSpeed = new ArrayList<>();
+        List<TripResponse> secondSectionFromNormal = new ArrayList<>();
+        try {
+            List<TripResponse> tempHigh = tripsFromHighSpeed(queryInfoSecondSection, headers);
+            if (tempHigh != null) {
+                secondSectionFromHighSpeed = tempHigh;
+            }
+        } catch (Exception e) {
+            LOGGER.error("[getTransferSearch] Failed to get second section high speed trips", e);
+        }
+        try {
+            List<TripResponse> tempNormal = tripsFromNormal(queryInfoSecondSection, headers);
+            if (tempNormal != null) {
+                secondSectionFromNormal = tempNormal;
+            }
+        } catch (Exception e) {
+            LOGGER.error("[getTransferSearch] Failed to get second section normal trips", e);
+        }
 
+        // 6. 合并行程结果（确保addAll的集合非null）
         List<TripResponse> firstSection = new ArrayList<>();
-        firstSection.addAll(firstSectionFromHighSpeed);
+        firstSection.addAll(firstSectionFromHighSpeed); // 已兜底为空列表，不会抛NPE
         firstSection.addAll(firstSectionFromNormal);
 
         List<TripResponse> secondSection = new ArrayList<>();
         secondSection.addAll(secondSectionFromHighSpeed);
         secondSection.addAll(secondSectionFromNormal);
 
+        // 7. 构建返回结果（无有效换乘时返回友好提示）
         TransferTravelResult result = new TransferTravelResult();
         result.setFirstSectionResult(firstSection);
         result.setSecondSectionResult(secondSection);
 
-        return new Response<>(1, "Success.", result);
+        // 校验是否有有效换乘结果
+        boolean hasValidResult = !firstSection.isEmpty() && !secondSection.isEmpty();
+        if (hasValidResult) {
+            LOGGER.info("[getTransferSearch] Transfer search success: first section size={}, second section size={}",
+                    firstSection.size(), secondSection.size());
+            return new Response<>(1, "Success.", result);
+        } else {
+            LOGGER.warn("[getTransferSearch] No transfer trips found: start={}, via={}, end={}",
+                    info.getStartStation(), info.getViaStation(), info.getEndStation());
+            return new Response<>(0, "No transfer trips found", result); // 返回空结果，便于前端展示
+        }
     }
 
     @Override
@@ -136,99 +207,266 @@ public class TravelPlanServiceImpl implements TravelPlanService {
 
     @Override
     public Response getQuickest(TripInfo info, HttpHeaders headers) {
+        // 1. 前置入参校验（源头避免无效请求）
+        if (info == null) {
+            TravelPlanServiceImpl.LOGGER.error("[getQuickest] TripInfo is null");
+            return new Response<>(0, cannotFind, null);
+        }
+        if (info.getStartPlace() == null || info.getStartPlace().trim().isEmpty()
+                || info.getEndPlace() == null || info.getEndPlace().trim().isEmpty()
+                || info.getDepartureTime() == null || info.getDepartureTime().trim().isEmpty()) {
+            TravelPlanServiceImpl.LOGGER.error("[getQuickest] Invalid TripInfo: start/end place or departure time is empty");
+            return new Response<>(0, "Invalid request: start/end place or departure time cannot be empty", null);
+        }
+
+        // 2. 构建RoutePlanInfo
         RoutePlanInfo routePlanInfo = new RoutePlanInfo();
         routePlanInfo.setNum(5);
         routePlanInfo.setStartStation(info.getStartPlace());
         routePlanInfo.setEndStation(info.getEndPlace());
         routePlanInfo.setTravelDate(info.getDepartureTime());
-        ArrayList<RoutePlanResultUnit> routePlanResultUnits = getRoutePlanResultQuickest(routePlanInfo, headers);
 
+        // 3. 获取最快路线规划结果（核心空值修复）
+        ArrayList<RoutePlanResultUnit> routePlanResultUnits = new ArrayList<>();
+        try {
+            ArrayList<RoutePlanResultUnit> tempResult = getRoutePlanResultQuickest(routePlanInfo, headers);
+            if (tempResult != null) {
+                routePlanResultUnits = tempResult;
+            }
+        } catch (Exception e) {
+            TravelPlanServiceImpl.LOGGER.error("[getQuickest] Failed to get quickest route plan", e);
+            return new Response<>(0, "Failed to query quickest trip: " + e.getMessage(), null);
+        }
 
-        if (!routePlanResultUnits.isEmpty()) {
+        // 4. 无结果时返回友好提示
+        if (routePlanResultUnits.isEmpty()) {
+            TravelPlanServiceImpl.LOGGER.warn("[getQuickest][Get quickest trip warn][Route Plan Result Units: No Content]");
+            return new Response<>(0, cannotFind, null);
+        }
 
-            ArrayList<TravelAdvanceResultUnit> lists = new ArrayList<>();
-            for (int i = 0; i < routePlanResultUnits.size(); i++) {
-                RoutePlanResultUnit tempUnit = routePlanResultUnits.get(i);
+        // 5. 转换结果并计算余票（增加全链路异常处理）
+        ArrayList<TravelAdvanceResultUnit> lists = new ArrayList<>();
+        for (int i = 0; i < routePlanResultUnits.size(); i++) {
+            RoutePlanResultUnit tempUnit = routePlanResultUnits.get(i);
+            // 跳过null的tempUnit
+            if (tempUnit == null) {
+                TravelPlanServiceImpl.LOGGER.warn("[getQuickest] Skip null RoutePlanResultUnit at index: {}", i);
+                continue;
+            }
+
+            try {
                 TravelAdvanceResultUnit newUnit = new TravelAdvanceResultUnit();
                 newUnit.setTripId(tempUnit.getTripId());
                 newUnit.setTrainTypeId(tempUnit.getTrainTypeName());
                 newUnit.setEndStation(tempUnit.getEndStation());
                 newUnit.setStartStation(tempUnit.getStartStation());
 
+                // 修复：StopStations空值兜底
                 List<String> stops = tempUnit.getStopStations();
-                newUnit.setStopStations(stops);
+                newUnit.setStopStations(stops == null ? new ArrayList<>() : stops);
 
                 newUnit.setPriceForFirstClassSeat(tempUnit.getPriceForFirstClassSeat());
                 newUnit.setPriceForSecondClassSeat(tempUnit.getPriceForSecondClassSeat());
                 newUnit.setStartTime(tempUnit.getStartTime());
                 newUnit.setEndTime(tempUnit.getEndTime());
 
+                // 修复：TrainType空值处理
                 TrainType trainType = queryTrainTypeByName(tempUnit.getTrainTypeName(), headers);
-                int firstClassTotalNum = trainType.getConfortClass();
-                int secondClassTotalNum = trainType.getEconomyClass();
-                int first = getRestTicketNumber(info.getDepartureTime(), tempUnit.getTripId(),
-                        tempUnit.getStartStation(), tempUnit.getEndStation(), SeatClass.FIRSTCLASS.getCode(), firstClassTotalNum, tempUnit.getStopStations(), headers);
+                int firstClassTotalNum = 0;
+                int secondClassTotalNum = 0;
+                if (trainType != null) {
+                    firstClassTotalNum = trainType.getConfortClass();
+                    secondClassTotalNum = trainType.getEconomyClass();
+                } else {
+                    TravelPlanServiceImpl.LOGGER.warn("[getQuickest] No TrainType found for name: {}", tempUnit.getTrainTypeName());
+                    // 兜底默认值，避免后续计算异常
+                    firstClassTotalNum = 0;
+                    secondClassTotalNum = 0;
+                }
 
-                int second = getRestTicketNumber(info.getDepartureTime(), tempUnit.getTripId(),
-                        tempUnit.getStartStation(), tempUnit.getEndStation(), SeatClass.SECONDCLASS.getCode(), secondClassTotalNum, tempUnit.getStopStations(),headers);
+                // 修复：getRestTicketNumber增加异常捕获+参数校验
+                int first = 0;
+                int second = 0;
+                try {
+                    // 确保stopStations非null（已兜底）
+                    first = getRestTicketNumber(
+                            info.getDepartureTime(),
+                            tempUnit.getTripId(),
+                            tempUnit.getStartStation(),
+                            tempUnit.getEndStation(),
+                            SeatClass.FIRSTCLASS.getCode(),
+                            firstClassTotalNum,
+                            newUnit.getStopStations(), // 使用已兜底的stopStations
+                            headers
+                    );
+
+                    second = getRestTicketNumber(
+                            info.getDepartureTime(),
+                            tempUnit.getTripId(),
+                            tempUnit.getStartStation(),
+                            tempUnit.getEndStation(),
+                            SeatClass.SECONDCLASS.getCode(),
+                            secondClassTotalNum,
+                            newUnit.getStopStations(),
+                            headers
+                    );
+                } catch (Exception e) {
+                    TravelPlanServiceImpl.LOGGER.error("[getQuickest] Failed to get rest tickets for tripId: {}", tempUnit.getTripId(), e);
+                    // 单个车次余票查询失败，设为0而非终止循环
+                    first = 0;
+                    second = 0;
+                }
+
                 newUnit.setNumberOfRestTicketFirstClass(first);
                 newUnit.setNumberOfRestTicketSecondClass(second);
                 lists.add(newUnit);
+            } catch (Exception e) {
+                TravelPlanServiceImpl.LOGGER.error("[getQuickest] Failed to process RoutePlanResultUnit at index: {}", i, e);
+                // 单个车次处理失败，跳过继续处理下一个
+                continue;
             }
-            return new Response<>(1, success, lists);
-        } else {
-            TravelPlanServiceImpl.LOGGER.warn("[getQuickest][Get quickest trip warn][Route Plan Result Units: {}]","No Content");
+        }
+
+        // 最终结果兜底（所有车次都处理失败时）
+        if (lists.isEmpty()) {
+            TravelPlanServiceImpl.LOGGER.warn("[getQuickest] No valid TravelAdvanceResultUnit after processing");
             return new Response<>(0, cannotFind, null);
         }
+
+        return new Response<>(1, success, lists);
     }
 
     @Override
     public Response getMinStation(TripInfo info, HttpHeaders headers) {
+        // 1. 前置入参校验（源头避免无效请求，核心修复第一步）
+        if (info == null) {
+            TravelPlanServiceImpl.LOGGER.error("[getMinStation] TripInfo is null");
+            return new Response<>(0, cannotFind, null);
+        }
+        if (info.getStartPlace() == null || info.getStartPlace().trim().isEmpty()
+                || info.getEndPlace() == null || info.getEndPlace().trim().isEmpty()
+                || info.getDepartureTime() == null || info.getDepartureTime().trim().isEmpty()) {
+            TravelPlanServiceImpl.LOGGER.error("[getMinStation] Invalid TripInfo: startPlace/endPlace/departureTime is empty");
+            return new Response<>(0, "Invalid request: start/end place or departure time cannot be empty", null);
+        }
+
+        // 2. 构建RoutePlanInfo
         RoutePlanInfo routePlanInfo = new RoutePlanInfo();
         routePlanInfo.setNum(5);
         routePlanInfo.setStartStation(info.getStartPlace());
         routePlanInfo.setEndStation(info.getEndPlace());
         routePlanInfo.setTravelDate(info.getDepartureTime());
-        ArrayList<RoutePlanResultUnit> routePlanResultUnits = getRoutePlanResultMinStation(routePlanInfo, headers);
 
-        if (!routePlanResultUnits.isEmpty()) {
+        // 3. 核心修复：初始化空列表兜底，避免getRoutePlanResultMinStation返回null触发NPE
+        ArrayList<RoutePlanResultUnit> routePlanResultUnits = new ArrayList<>();
+        try {
+            ArrayList<RoutePlanResultUnit> tempResult = getRoutePlanResultMinStation(routePlanInfo, headers);
+            // 只有返回值非null时才替换，否则保留空列表
+            if (tempResult != null) {
+                routePlanResultUnits = tempResult;
+            } else {
+                TravelPlanServiceImpl.LOGGER.warn("[getMinStation] getRoutePlanResultMinStation return null");
+            }
+        } catch (Exception e) {
+            // 捕获getRoutePlanResultMinStation的所有异常（如远程调用失败）
+            TravelPlanServiceImpl.LOGGER.error("[getMinStation] Failed to get route plan result for min station", e);
+            return new Response<>(0, "Failed to query min station trips: " + e.getMessage(), null);
+        }
 
-            ArrayList<TravelAdvanceResultUnit> lists = new ArrayList<>();
-            for (int i = 0; i < routePlanResultUnits.size(); i++) {
-                RoutePlanResultUnit tempUnit = routePlanResultUnits.get(i);
+        // 4. 无结果时返回友好提示（此时routePlanResultUnits一定非null，只是可能为空）
+        if (routePlanResultUnits.isEmpty()) {
+            TravelPlanServiceImpl.LOGGER.warn("[getMinStation][Get min stations trip warn][Route Plan Result Units: No Content]");
+            return new Response<>(0, cannotFind, null);
+        }
+
+        // 5. 遍历处理结果（全链路空值校验+异常捕获，核心修复第二步）
+        ArrayList<TravelAdvanceResultUnit> lists = new ArrayList<>();
+        for (int i = 0; i < routePlanResultUnits.size(); i++) {
+            RoutePlanResultUnit tempUnit = routePlanResultUnits.get(i);
+            // 跳过null的tempUnit，避免空指针
+            if (tempUnit == null) {
+                TravelPlanServiceImpl.LOGGER.warn("[getMinStation] Skip null RoutePlanResultUnit at index: {}", i);
+                continue;
+            }
+
+            try {
                 TravelAdvanceResultUnit newUnit = new TravelAdvanceResultUnit();
                 newUnit.setTripId(tempUnit.getTripId());
                 newUnit.setTrainTypeId(tempUnit.getTrainTypeName());
                 newUnit.setStartStation(tempUnit.getStartStation());
                 newUnit.setEndStation(tempUnit.getEndStation());
 
+                // 修复：StopStations空值兜底（避免传入null）
                 List<String> stops = tempUnit.getStopStations();
-                newUnit.setStopStations(stops);
+                newUnit.setStopStations(stops == null ? new ArrayList<>() : stops);
 
                 newUnit.setPriceForFirstClassSeat(tempUnit.getPriceForFirstClassSeat());
                 newUnit.setPriceForSecondClassSeat(tempUnit.getPriceForSecondClassSeat());
                 newUnit.setEndTime(tempUnit.getEndTime());
                 newUnit.setStartTime(tempUnit.getStartTime());
 
+                // 修复：TrainType空值处理（避免调用getConfortClass()抛NPE）
                 TrainType trainType = queryTrainTypeByName(tempUnit.getTrainTypeName(), headers);
-                int firstClassTotalNum = trainType.getConfortClass();
-                int secondClassTotalNum = trainType.getEconomyClass();
+                int firstClassTotalNum = 0;
+                int secondClassTotalNum = 0;
+                if (trainType != null) {
+                    firstClassTotalNum = trainType.getConfortClass();
+                    secondClassTotalNum = trainType.getEconomyClass();
+                } else {
+                    TravelPlanServiceImpl.LOGGER.warn("[getMinStation] No TrainType found for name: {}", tempUnit.getTrainTypeName());
+                }
 
-                int first = getRestTicketNumber(info.getDepartureTime(), tempUnit.getTripId(),
-                        tempUnit.getStartStation(), tempUnit.getEndStation(), SeatClass.FIRSTCLASS.getCode(), firstClassTotalNum, tempUnit.getStopStations(), headers);
+                // 修复：getRestTicketNumber异常捕获+参数兜底
+                int first = 0;
+                int second = 0;
+                try {
+                    first = getRestTicketNumber(
+                            info.getDepartureTime(),
+                            tempUnit.getTripId(),
+                            tempUnit.getStartStation(),
+                            tempUnit.getEndStation(),
+                            SeatClass.FIRSTCLASS.getCode(),
+                            firstClassTotalNum,
+                            newUnit.getStopStations(), // 使用已兜底的非null列表
+                            headers
+                    );
 
-                int second = getRestTicketNumber(info.getDepartureTime(), tempUnit.getTripId(),
-                        tempUnit.getStartStation(), tempUnit.getEndStation(), SeatClass.SECONDCLASS.getCode(), secondClassTotalNum, tempUnit.getStopStations(), headers);
+                    second = getRestTicketNumber(
+                            info.getDepartureTime(),
+                            tempUnit.getTripId(),
+                            tempUnit.getStartStation(),
+                            tempUnit.getEndStation(),
+                            SeatClass.SECONDCLASS.getCode(),
+                            secondClassTotalNum,
+                            newUnit.getStopStations(),
+                            headers
+                    );
+                } catch (Exception e) {
+                    TravelPlanServiceImpl.LOGGER.error("[getMinStation] Failed to get rest tickets for tripId: {}", tempUnit.getTripId(), e);
+                    // 单个车次余票查询失败，设为0而非终止循环
+                    first = 0;
+                    second = 0;
+                }
+
                 newUnit.setNumberOfRestTicketFirstClass(first);
                 newUnit.setNumberOfRestTicketSecondClass(second);
                 lists.add(newUnit);
+            } catch (Exception e) {
+                // 单个车次处理失败，跳过继续处理下一个
+                TravelPlanServiceImpl.LOGGER.error("[getMinStation] Failed to process RoutePlanResultUnit at index: {}", i, e);
+                continue;
             }
-            return new Response<>(1, success, lists);
-        } else {
-            TravelPlanServiceImpl.LOGGER.warn("[getMinStation][Get min stations trip warn][Route Plan Result Units: {}]","No Content");
+        }
+
+        // 最终兜底：所有车次处理失败时返回无结果
+        if (lists.isEmpty()) {
+            TravelPlanServiceImpl.LOGGER.warn("[getMinStation] No valid TravelAdvanceResultUnit after processing");
             return new Response<>(0, cannotFind, null);
         }
+
+        return new Response<>(1, success, lists);
     }
+
 
     private int getRestTicketNumber(String travelDate, String trainNumber, String startStationName, String endStationName, int seatType, int totalNum, List<String> stations, HttpHeaders headers) {
         Seat seatRequest = new Seat();

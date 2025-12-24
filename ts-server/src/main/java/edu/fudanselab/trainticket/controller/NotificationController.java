@@ -26,6 +26,7 @@ public class NotificationController {
     String test_mail_user;
 
     @GetMapping(path = "/welcome")
+    // 🆗
     public String home() {
         return "Welcome to [ Notification Service ] !";
     }
@@ -55,21 +56,25 @@ public class NotificationController {
     }
 
     @PostMapping(value = "/notification/preserve_success")
+    // 🆗
     public boolean preserve_success(@RequestBody NotifyInfo info, @RequestHeader HttpHeaders headers) {
         return service.preserveSuccess(info, headers);
     }
 
     @PostMapping(value = "/notification/order_create_success")
+    // 🆗
     public boolean order_create_success(@RequestBody NotifyInfo info, @RequestHeader HttpHeaders headers) {
         return service.orderCreateSuccess(info, headers);
     }
 
     @PostMapping(value = "/notification/order_changed_success")
+    // 🆗
     public boolean order_changed_success(@RequestBody NotifyInfo info, @RequestHeader HttpHeaders headers) {
         return service.orderChangedSuccess(info, headers);
     }
 
     @PostMapping(value = "/notification/order_cancel_success")
+    // 🆗
     public boolean order_cancel_success(@RequestBody NotifyInfo info, @RequestHeader HttpHeaders headers) {
         return service.orderCancelSuccess(info, headers);
     }

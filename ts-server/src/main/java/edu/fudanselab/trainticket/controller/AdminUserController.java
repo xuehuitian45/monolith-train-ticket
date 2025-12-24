@@ -23,18 +23,21 @@ public class AdminUserController {
     private static final Logger logger = LoggerFactory.getLogger(AdminUserController.class);
 
     @GetMapping(path = "/welcome")
+    // 🆗
     public String home(@RequestHeader HttpHeaders headers) {
         return "Welcome to [ AdminUser Service ] !";
     }
 
     @CrossOrigin(origins = "*")
     @GetMapping
+    // 🆗
     public HttpEntity getAllUsers(@RequestHeader HttpHeaders headers) {
         logger.info("[getAllUsers][Get all users]");
         return ok(adminUserService.getAllUsers(headers));
     }
 
     @PutMapping
+    // 🆗
     public HttpEntity updateUser(@RequestBody UserDto userDto, @RequestHeader HttpHeaders headers) {
         logger.info("[updateUser][Update User][username: {}]", userDto.getUsername());
         return ok(adminUserService.updateUser(userDto, headers));
@@ -42,12 +45,14 @@ public class AdminUserController {
 
 
     @PostMapping
+    // 🆗
     public HttpEntity addUser(@RequestBody UserDto userDto, @RequestHeader HttpHeaders headers) {
         logger.info("[addUser][Add user][username: {}]", userDto.getUsername());
         return ok(adminUserService.addUser(userDto, headers));
     }
 
     @DeleteMapping(value = "/{userId}")
+    // 🆗
     public HttpEntity deleteUser(@PathVariable String userId, @RequestHeader HttpHeaders headers) {
         logger.info("[deleteUser][Delete user][userId: {}]", userId);
         return ok(adminUserService.deleteUser(userId, headers));

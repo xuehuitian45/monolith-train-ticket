@@ -67,7 +67,7 @@ public class AdminRouteServiceImpl implements AdminRouteService {
             return response;
         }
 
-        HttpEntity requestEntity = new HttpEntity(request, null);
+        HttpEntity requestEntity = new HttpEntity(request, headers);
         String route_service_url = serviceResolver.getServiceUrl("ts-route-service");
         ResponseEntity<Response<Route>> re = restTemplate.exchange(
                 route_service_url + "/api/v1/routeservice/routes",
@@ -84,7 +84,7 @@ public class AdminRouteServiceImpl implements AdminRouteService {
     @Override
     public Response deleteRoute(String routeId, HttpHeaders headers) {
 
-        HttpEntity requestEntity = new HttpEntity(null);
+        HttpEntity requestEntity = new HttpEntity(headers);
         String route_service_url = serviceResolver.getServiceUrl("ts-route-service");
         ResponseEntity<Response> re = restTemplate.exchange(
                 route_service_url + "/api/v1/routeservice/routes/" + routeId,

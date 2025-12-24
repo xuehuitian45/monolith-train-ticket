@@ -20,12 +20,14 @@ public class TrainFoodController {
     private static final Logger LOGGER = LoggerFactory.getLogger(TrainFoodController.class);
 
     @GetMapping(path = "/trainfoods/welcome")
+    // 🆗
     public String home() {
         return "Welcome to [ Train Food Service ] !";
     }
 
     @CrossOrigin(origins = "*")
     @GetMapping("/trainfoods")
+    // 🆗
     public HttpEntity getAllTrainFood(@RequestHeader HttpHeaders headers) {
         TrainFoodController.LOGGER.info("[Food Map Service][Get All TrainFoods]");
         return ok(trainFoodService.listTrainFood(headers));
@@ -33,6 +35,7 @@ public class TrainFoodController {
 
     @CrossOrigin(origins = "*")
     @GetMapping("/trainfoods/{tripId}")
+    // 🆗
     public HttpEntity getTrainFoodOfTrip(@PathVariable String tripId, @RequestHeader HttpHeaders headers) {
         TrainFoodController.LOGGER.info("[Food Map Service][Get TrainFoods By TripId]");
         return ok(trainFoodService.listTrainFoodByTripId(tripId, headers));

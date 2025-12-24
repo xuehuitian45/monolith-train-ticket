@@ -33,11 +33,13 @@ public class AuthUserController {
     private static final Logger logger = LoggerFactory.getLogger(AuthUserController.class);
 
     @GetMapping("/hello")
+    // 🆗
     public Object getHello() {
         return "Hello";
     }
 
     @PostMapping("/login")
+    // 🆗
     public ResponseEntity<Response> getToken(@RequestBody BasicAuthDto dao , @RequestHeader HttpHeaders headers) {
         logger.info("Login request of username: {}", dao.getUsername());
         try {
@@ -50,12 +52,14 @@ public class AuthUserController {
     }
 
     @GetMapping("/getAllUser")
+    // 🆗
     public ResponseEntity<List<AuthUser>> getAllUser(@RequestHeader HttpHeaders headers) {
         logger.info("[getAllUser][Get all users]");
         return ResponseEntity.ok().body(authUserService.getAllUser(headers));
     }
 
     @DeleteMapping("/{userId}")
+    // 🆗
     public ResponseEntity<Response> deleteUserById(@PathVariable String userId, @RequestHeader HttpHeaders headers) {
         logger.info("[deleteUserById][Delete user][userId: {}]", userId);
         return ResponseEntity.ok(authUserService.deleteByUserId(userId, headers));

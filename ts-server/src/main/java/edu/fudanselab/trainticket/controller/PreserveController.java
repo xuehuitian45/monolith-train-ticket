@@ -24,12 +24,14 @@ public class PreserveController {
     private static final Logger LOGGER = LoggerFactory.getLogger(PreserveController.class);
 
     @GetMapping(path = "/welcome")
+    // 🆗
     public String home() {
         return "Welcome to [ Preserve Service ] !";
     }
 
     @CrossOrigin(origins = "*")
     @PostMapping(value = "/preserve")
+    // 🆗
     public HttpEntity preserve(@RequestBody OrderTicketsInfo oti,
                                @RequestHeader HttpHeaders headers) {
         PreserveController.LOGGER.info("[preserve][Preserve Account order][from {} to {} at {}]", oti.getFrom(), oti.getTo(), oti.getDate());

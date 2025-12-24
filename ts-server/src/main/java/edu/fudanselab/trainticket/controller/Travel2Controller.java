@@ -28,11 +28,13 @@ public class Travel2Controller {
     private static final Logger LOGGER = LoggerFactory.getLogger(Travel2Controller.class);
 
     @GetMapping(path = "/welcome")
+    // 🆗
     public String home(@RequestHeader HttpHeaders headers) {
         return "Welcome to [ Travle2 Service ] !";
     }
 
     @GetMapping(value = "/train_types/{tripId}")
+    // 🆗
     public HttpEntity getTrainTypeByTripId(@PathVariable String tripId,
                                            @RequestHeader HttpHeaders headers) {
         // TrainType
@@ -41,6 +43,7 @@ public class Travel2Controller {
     }
 
     @GetMapping(value = "/routes/{tripId}")
+    // 🆗
     public HttpEntity getRouteByTripId(@PathVariable String tripId,
                                        @RequestHeader HttpHeaders headers) {
         Travel2Controller.LOGGER.info("[getRouteByTripId][Get Route By Trip ID][TripId: {}]", tripId);
@@ -49,6 +52,7 @@ public class Travel2Controller {
     }
 
     @PostMapping(value = "/trips/routes")
+    // 🆗
     public HttpEntity getTripsByRouteId(@RequestBody ArrayList<String> routeIds,
                                         @RequestHeader HttpHeaders headers) {
         // ArrayList<ArrayList<Trip>>
@@ -58,6 +62,7 @@ public class Travel2Controller {
 
     @CrossOrigin(origins = "*")
     @PostMapping(value = "/trips")
+    // 🆗
     public HttpEntity<?> createTrip(@RequestBody edu.fudanselab.trainticket.entity.TravelInfo routeIds, @RequestHeader HttpHeaders headers) {
         // null
         Travel2Controller.LOGGER.info("[create][Create trip][TripId: {}]", routeIds.getTripId());
@@ -73,6 +78,7 @@ public class Travel2Controller {
      */
     @CrossOrigin(origins = "*")
     @GetMapping(value = "/trips/{tripId}")
+    // 🆗
     public HttpEntity retrieve(@PathVariable String tripId, @RequestHeader HttpHeaders headers) {
         // Trip
         Travel2Controller.LOGGER.info("[retrieve][Retrieve trip][TripId: {}]",tripId);
@@ -81,6 +87,7 @@ public class Travel2Controller {
 
     @CrossOrigin(origins = "*")
     @PutMapping(value = "/trips")
+    // 🆗
     public HttpEntity updateTrip(@RequestBody edu.fudanselab.trainticket.entity.TravelInfo info, @RequestHeader HttpHeaders headers) {
         // Trip
         Travel2Controller.LOGGER.info("[update][Update trip][TripId: {}]",info.getTripId());
@@ -89,6 +96,7 @@ public class Travel2Controller {
 
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/trips/{tripId}")
+    // 🆗
     public HttpEntity deleteTrip(@PathVariable String tripId, @RequestHeader HttpHeaders headers) {
         // string
         Travel2Controller.LOGGER.info("[delete][Delete trip][TripId: {}]",tripId);
@@ -104,6 +112,7 @@ public class Travel2Controller {
      */
     @CrossOrigin(origins = "*")
     @PostMapping(value = "/trips/left")
+    // 🆗
     public HttpEntity queryInfo(@RequestBody edu.fudanselab.trainticket.entity.TripInfo info, @RequestHeader HttpHeaders headers) {
         if (info.getStartPlace() == null || info.getStartPlace().length() == 0 ||
                 info.getEndPlace() == null || info.getEndPlace().length() == 0 ||
@@ -125,6 +134,7 @@ public class Travel2Controller {
      */
     @CrossOrigin(origins = "*")
     @PostMapping(value = "/trip_detail")
+    // 🆗
     public HttpEntity getTripAllDetailInfo(@RequestBody edu.fudanselab.trainticket.entity.TripAllDetailInfo gtdi, @RequestHeader HttpHeaders headers) {
         Travel2Controller.LOGGER.info("[getTripAllDetailInfo][Get trip detail][TripId: {}]",gtdi.getTripId());
         return ok(service.getTripAllDetailInfo(gtdi, headers));
@@ -132,6 +142,7 @@ public class Travel2Controller {
 
     @CrossOrigin(origins = "*")
     @GetMapping(value = "/trips")
+    // 🆗
     public HttpEntity queryAll(@RequestHeader HttpHeaders headers) {
         // List<Trip>
         Travel2Controller.LOGGER.info("[queryAll][Query all trips]");
@@ -140,6 +151,7 @@ public class Travel2Controller {
 
     @CrossOrigin(origins = "*")
     @GetMapping(value = "/admin_trip")
+    // 🆗
     public HttpEntity adminQueryAll(@RequestHeader HttpHeaders headers) {
         // ArrayList<AdminTrip>
         Travel2Controller.LOGGER.info("[adminQueryAll][Admin query all trips]");

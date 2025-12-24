@@ -46,6 +46,7 @@ public class VerifyCodeController {
     }
 
     @GetMapping(value = "/verify/{verifyCode}")
+    // 🆗
     public boolean verifyCode(@PathVariable String verifyCode, HttpServletRequest request,
                               HttpServletResponse response, @RequestHeader HttpHeaders headers) {
         LOGGER.info("[verifyCode][receivedCode: {}]", verifyCode);

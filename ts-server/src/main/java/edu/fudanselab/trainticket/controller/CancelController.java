@@ -24,12 +24,14 @@ public class CancelController {
     private static final Logger LOGGER = LoggerFactory.getLogger(CancelController.class);
 
     @GetMapping(path = "/welcome")
+    // 🆗
     public String home(@RequestHeader HttpHeaders headers) {
         return "Welcome to [ Cancel Service ] !";
     }
 
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/cancel/refound/{orderId}")
+    // 🆗
     public HttpEntity calculate(@PathVariable String orderId, @RequestHeader HttpHeaders headers) {
         CancelController.LOGGER.info("[calculate][Calculate Cancel Refund][OrderId: {}]", orderId);
         return ok(cancelService.calculateRefund(orderId, headers));

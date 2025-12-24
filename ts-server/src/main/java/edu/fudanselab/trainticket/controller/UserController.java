@@ -27,28 +27,33 @@ public class UserController {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
 
     @GetMapping("/hello")
+    // 🆗
     public String testHello() {
         return "Hello";
     }
 
     @GetMapping
+    // 🆗
     public ResponseEntity<Response> getAllUser(@RequestHeader HttpHeaders headers) {
         UserController.LOGGER.info("[getAllUser][Get all user]");
         return ok(userService.getAllUsers(headers));
     }
 
     @GetMapping("/{username}")
+    // 🆗
     public ResponseEntity<Response> getUserByUsername(@PathVariable String username, @RequestHeader HttpHeaders headers) {
         UserController.LOGGER.info("[getUserByUsername][Get user by user name][Username: {}]",username);
         return ok(userService.findByUsername(username, headers));
     }
     @GetMapping("/id/{userId}")
+    // 🆗
     public ResponseEntity<Response> getUserByUserId(@PathVariable String userId, @RequestHeader HttpHeaders headers) {
         UserController.LOGGER.info("[getUserByUserId][Get user by user id][UserId: {}]",userId);
         return ok(userService.findByUserId(userId, headers));
     }
 
     @PostMapping("/register")
+    // 🆗
     public ResponseEntity<Response> registerUser(@RequestBody UserDto userDto, @RequestHeader HttpHeaders headers) {
         UserController.LOGGER.info("[registerUser][Register user][Username: {}]",userDto.getUsername());
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.saveUser(userDto, headers));
@@ -56,6 +61,7 @@ public class UserController {
 
 
     @DeleteMapping("/{userId}")
+    // 🆗
     public ResponseEntity<Response> deleteUserById(@PathVariable String userId,
                                                    @RequestHeader HttpHeaders headers) {
         // only admin token can delete
@@ -64,6 +70,7 @@ public class UserController {
     }
 
     @PutMapping
+    // 🆗
     public ResponseEntity<Response> updateUser(@RequestBody UserDto user,
                                                @RequestHeader HttpHeaders headers) {
         UserController.LOGGER.info("[updateUser][Update user][UserId: {}]",user.getUserId());

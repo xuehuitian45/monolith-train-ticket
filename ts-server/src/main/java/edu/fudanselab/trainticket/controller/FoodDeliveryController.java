@@ -25,6 +25,7 @@ public class FoodDeliveryController {
     private static final Logger LOGGER = LoggerFactory.getLogger(FoodDeliveryController.class);
 
     @GetMapping(path = "/welcome")
+    // 🆗
     public String home() {
         return "Welcome to [ food delivery service ] !";
     }

@@ -24,6 +24,7 @@ public class AdminRouteController {
     public static final Logger logger = LoggerFactory.getLogger(AdminRouteController.class);
 
     @GetMapping(path = "/welcome")
+    // 🆗
     public String home(@RequestHeader HttpHeaders headers) {
         return "Welcome to [ AdminRoute Service ] !";
     }
@@ -43,6 +44,7 @@ public class AdminRouteController {
     }
 
     @DeleteMapping(value = "/adminroute/{routeId}")
+    // 🆗
     public HttpEntity deleteRoute(@PathVariable String routeId, @RequestHeader HttpHeaders headers) {
         logger.info("[deleteRoute][Delete route][route id: {}]", routeId);
         return ok(adminRouteService.deleteRoute(routeId, headers));

@@ -27,6 +27,7 @@ public class AdminBasicInfoController {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminBasicInfoController.class);
 
     @GetMapping(path = "/welcome")
+    // 🆗
     public String home(@RequestHeader HttpHeaders headers) {
         return "Welcome to [ AdminBasicInfo Service ] !";
     }
@@ -40,6 +41,7 @@ public class AdminBasicInfoController {
 
     @CrossOrigin(origins = "*")
     @DeleteMapping(path = "/adminbasic/contacts/{contactsId}")
+    // 🆗
     public HttpEntity deleteContacts(@PathVariable String contactsId, @RequestHeader HttpHeaders headers) {
         AdminBasicInfoController.LOGGER.info("[deleteContacts][Delete Contacts by admin][contactsId: {}]", contactsId);
         return ok(adminBasicInfoService.deleteContact(contactsId, headers));
@@ -54,6 +56,7 @@ public class AdminBasicInfoController {
 
     @CrossOrigin(origins = "*")
     @PostMapping(path = "/adminbasic/contacts")
+    // 🆗
     public HttpEntity addContacts(@RequestBody Contacts c, @RequestHeader HttpHeaders headers) {
         AdminBasicInfoController.LOGGER.info("[addContacts][Modify Contacts by admin][Contacts name: {}]", c.getName());
         return ok(adminBasicInfoService.addContact(c, headers));
@@ -68,6 +71,7 @@ public class AdminBasicInfoController {
 
     @CrossOrigin(origins = "*")
     @DeleteMapping(path = "/adminbasic/stations/{id}")
+    // 🆗
     public HttpEntity deleteStation(@PathVariable String id, @RequestHeader HttpHeaders headers) {
         AdminBasicInfoController.LOGGER.info("[deleteStation][Delete Station by admin][Station id: {}]", id);
         return ok(adminBasicInfoService.deleteStation(id, headers));
@@ -75,13 +79,15 @@ public class AdminBasicInfoController {
 
     @CrossOrigin(origins = "*")
     @PutMapping(path = "/adminbasic/stations")
-    public HttpEntity modifyStation(@RequestBody Station s, @RequestHeader HttpHeaders headers) {
-        AdminBasicInfoController.LOGGER.info("[modifyStation][Modify Station by admin][Station id: {}]", s.getId());
-        return ok(adminBasicInfoService.modifyStation(s, headers));
+    // 🆗
+    public HttpEntity modifyStation(@RequestBody Station station, @RequestHeader HttpHeaders headers) {
+        AdminBasicInfoController.LOGGER.info("[modifyStation][Modify Station by admin][Station id: {}]", station.getId());
+        return ok(adminBasicInfoService.modifyStation(station, headers));
     }
 
     @CrossOrigin(origins = "*")
     @PostMapping(path = "/adminbasic/stations")
+    // 🆗
     public HttpEntity addStation(@RequestBody Station s, @RequestHeader HttpHeaders headers) {
         AdminBasicInfoController.LOGGER.info("[addStation][Add Station by admin][Station id: {}]", s.getId());
         return ok(adminBasicInfoService.addStation(s, headers));
@@ -96,6 +102,7 @@ public class AdminBasicInfoController {
 
     @CrossOrigin(origins = "*")
     @DeleteMapping(path = "/adminbasic/trains/{id}")
+    // 🆗
     public HttpEntity deleteTrain(@PathVariable String id, @RequestHeader HttpHeaders headers) {
         AdminBasicInfoController.LOGGER.info("[deleteTrain][Delete Train by admin][train id: {}]", id);
         return ok(adminBasicInfoService.deleteTrain(id, headers));
@@ -103,16 +110,18 @@ public class AdminBasicInfoController {
 
     @CrossOrigin(origins = "*")
     @PutMapping(path = "/adminbasic/trains")
-    public HttpEntity modifyTrain(@RequestBody TrainType t, @RequestHeader HttpHeaders headers) {
-        AdminBasicInfoController.LOGGER.info("[modifyTrain][Modify Train by admin][TrainType id: {}]", t.getId());
-        return ok(adminBasicInfoService.modifyTrain(t, headers));
+    // 🆗
+    public HttpEntity modifyTrain(@RequestBody TrainType trainType, @RequestHeader HttpHeaders headers) {
+        AdminBasicInfoController.LOGGER.info("[modifyTrain][Modify Train by admin][TrainType id: {}]", trainType.getId());
+        return ok(adminBasicInfoService.modifyTrain(trainType, headers));
     }
 
     @CrossOrigin(origins = "*")
     @PostMapping(path = "/adminbasic/trains")
-    public HttpEntity addTrain(@RequestBody TrainType t, @RequestHeader HttpHeaders headers) {
-        AdminBasicInfoController.LOGGER.info("[addTrain][Add Train by admin][TrainType id: {}]", t.getId());
-        return ok(adminBasicInfoService.addTrain(t, headers));
+    // 🆗
+    public HttpEntity addTrain(@RequestBody TrainType trainType, @RequestHeader HttpHeaders headers) {
+        AdminBasicInfoController.LOGGER.info("[addTrain][Add Train by admin][TrainType id: {}]", trainType.getId());
+        return ok(adminBasicInfoService.addTrain(trainType, headers));
     }
 
     @CrossOrigin(origins = "*")
@@ -124,6 +133,7 @@ public class AdminBasicInfoController {
 
     @CrossOrigin(origins = "*")
     @DeleteMapping(path = "/adminbasic/configs/{name}")
+    // 🆗
     public HttpEntity deleteConfig(@PathVariable String name, @RequestHeader HttpHeaders headers) {
         AdminBasicInfoController.LOGGER.info("[deleteConfig][Delete Config by admin][Config name: {}]", name);
         return ok(adminBasicInfoService.deleteConfig(name, headers));
@@ -131,6 +141,7 @@ public class AdminBasicInfoController {
 
     @CrossOrigin(origins = "*")
     @PutMapping(path = "/adminbasic/configs")
+    // 🆗
     public HttpEntity modifyConfig(@RequestBody Config c, @RequestHeader HttpHeaders headers) {
         AdminBasicInfoController.LOGGER.info("[modifyConfig][Modify Config by admin][Config name: {}]", c.getName());
         return ok(adminBasicInfoService.modifyConfig(c, headers));
@@ -138,6 +149,7 @@ public class AdminBasicInfoController {
 
     @CrossOrigin(origins = "*")
     @PostMapping(path = "/adminbasic/configs")
+    // 🆗
     public HttpEntity addConfig(@RequestBody Config c, @RequestHeader HttpHeaders headers) {
         AdminBasicInfoController.LOGGER.info("[addConfig][Add Config by admin][Config name: {}]", c.getName());
         return ok(adminBasicInfoService.addConfig(c, headers));
@@ -152,6 +164,7 @@ public class AdminBasicInfoController {
 
     @CrossOrigin(origins = "*")
     @DeleteMapping(path = "/adminbasic/prices/{pricesId}")
+    // 🆗
     public HttpEntity deletePrice(@PathVariable String pricesId, @RequestHeader HttpHeaders headers) {
         AdminBasicInfoController.LOGGER.info("[deletePrice][Delete Price by admin][PriceInfo id: {}]", pricesId);
         return ok(adminBasicInfoService.deletePrice(pricesId, headers));
@@ -159,6 +172,7 @@ public class AdminBasicInfoController {
 
     @CrossOrigin(origins = "*")
     @PutMapping(path = "/adminbasic/prices")
+    // 🆗
     public HttpEntity modifyPrice(@RequestBody PriceInfo pi, @RequestHeader HttpHeaders headers) {
         AdminBasicInfoController.LOGGER.info("[modifyPrice][Modify Price by admin][PriceInfo id: {}]", pi.getId());
         return ok(adminBasicInfoService.modifyPrice(pi, headers));
@@ -166,6 +180,7 @@ public class AdminBasicInfoController {
 
     @CrossOrigin(origins = "*")
     @PostMapping(path = "/adminbasic/prices")
+    // 🆗
     public HttpEntity addPrice(@RequestBody PriceInfo pi, @RequestHeader HttpHeaders headers) {
         AdminBasicInfoController.LOGGER.info("[addPrice][Add Price by admin[PriceInfo id: {}]", pi.getId());
         return ok(adminBasicInfoService.addPrice(pi, headers));

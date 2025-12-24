@@ -2,11 +2,7 @@ package edu.fudanselab.trainticket.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.fudanselab.trainticket.entity.TravelResult;
-import edu.fudanselab.trainticket.entity.Route;
-import edu.fudanselab.trainticket.entity.Travel;
-import edu.fudanselab.trainticket.entity.PriceConfig;
-import edu.fudanselab.trainticket.entity.TrainType;
+import edu.fudanselab.trainticket.entity.*;
 import edu.fudanselab.trainticket.util.JsonUtils;
 import edu.fudanselab.trainticket.util.Response;
 import edu.fudanselab.trainticket.service.BasicService;
@@ -161,188 +157,293 @@ public class BasicServiceImpl implements BasicService {
         Set<String> trainTypeNames = new HashSet<>();
         Set<String> routeIds = new HashSet<>();
         Set<String> avaTrips = new HashSet<>();
-        for(Travel info: infos){
-            stationNames.add(info.getStartPlace());
-            stationNames.add(info.getEndPlace());
-            trainTypeNames.add(info.getTrip().getTrainTypeName());
-            routeIds.add(info.getTrip().getRouteId());
 
-            String tripNumber = info.getTrip().getTripId().toString();
-            avaTrips.add(tripNumber);
-            tripInfos.put(tripNumber, info);
+        // ========== 第一步：遍历行程数据，过滤无效数据+初始化映射 ==========
+        for (Travel info : infos) {
+            // 全局异常捕获：单个行程数据异常不影响整体流程
+            try {
+                // 1. 层层判空：过滤无效的Travel/Trip/TripId
+                if (info == null) {
+                    LOGGER.warn("[queryForTravels][过滤无效数据][info为null]");
+                    continue;
+                }
+                Trip trip = info.getTrip();
+                if (trip == null) {
+                    LOGGER.warn("[queryForTravels][过滤无效数据][trip为null][startPlace: {}, endPlace: {}]",
+                            info.getStartPlace(), info.getEndPlace());
+                    continue;
+                }
+                TripId tripId = trip.getTripId();
+                if (tripId == null) {
+                    LOGGER.warn("[queryForTravels][过滤无效数据][tripId为null][trainTypeName: {}, routeId: {}]",
+                            trip.getTrainTypeName(), trip.getRouteId());
+                    continue;
+                }
 
-            String start = info.getStartPlace();
-            List<String> trips = startTrips.get(start);
-            if(trips == null) {
-                trips = new ArrayList<>();
+                // 2. 安全获取tripNumber（避免TripId.toString()空指针）
+                String tripNumber;
+                try {
+                    tripNumber = tripId.toString();
+                } catch (NullPointerException e) {
+                    LOGGER.error("[queryForTravels][TripId.toString()空指针][tripId: {}]", tripId, e);
+                    continue;
+                }
+
+                // 3. 判空：起止地点
+                if (info.getStartPlace() == null || info.getEndPlace() == null ||
+                        info.getStartPlace().isEmpty() || info.getEndPlace().isEmpty()) {
+                    LOGGER.warn("[queryForTravels][过滤无效数据][起止地点为空][tripNumber: {}]", tripNumber);
+                    continue;
+                }
+                stationNames.add(info.getStartPlace());
+                stationNames.add(info.getEndPlace());
+
+                // 4. 判空：列车类型
+                if (trip.getTrainTypeName() == null || trip.getTrainTypeName().isEmpty()) {
+                    LOGGER.warn("[queryForTravels][过滤无效数据][列车类型为空][tripNumber: {}]", tripNumber);
+                    continue;
+                }
+                trainTypeNames.add(trip.getTrainTypeName());
+
+                // 5. 判空：路线ID
+                if (trip.getRouteId() == null || trip.getRouteId().isEmpty()) {
+                    LOGGER.warn("[queryForTravels][过滤无效数据][路线ID为空][tripNumber: {}]", tripNumber);
+                    continue;
+                }
+                routeIds.add(trip.getRouteId());
+
+                // 6. 初始化各类映射
+                avaTrips.add(tripNumber);
+                tripInfos.put(tripNumber, info);
+
+                // 初始化startTrips
+                String start = info.getStartPlace();
+                List<String> trips = startTrips.getOrDefault(start, new ArrayList<>());
+                trips.add(tripNumber);
+                startTrips.put(start, trips);
+
+                // 初始化endTrips
+                String end = info.getEndPlace();
+                trips = endTrips.getOrDefault(end, new ArrayList<>());
+                trips.add(tripNumber);
+                endTrips.put(end, trips);
+
+                // 初始化routeTrips
+                String routeId = trip.getRouteId();
+                trips = routeTrips.getOrDefault(routeId, new ArrayList<>());
+                trips.add(tripNumber);
+                routeTrips.put(routeId, trips);
+
+                // 初始化typeTrips
+                String trainTypeName = trip.getTrainTypeName();
+                trips = typeTrips.getOrDefault(trainTypeName, new ArrayList<>());
+                trips.add(tripNumber);
+                typeTrips.put(trainTypeName, trips);
+
+            } catch (Exception e) {
+                LOGGER.error("[queryForTravels][处理行程数据异常][info: {}]", info, e);
+                continue;
             }
-            trips.add(tripNumber);
-            startTrips.put(start, trips);
-
-            String end = info.getEndPlace();
-            trips = endTrips.get(end);
-            if(trips == null) {
-                trips = new ArrayList<>();
-            }
-            trips.add(tripNumber);
-            endTrips.put(end, trips);
-
-            String routeId = info.getTrip().getRouteId();
-            trips = routeTrips.get(routeId);
-            if(trips == null) {
-                trips = new ArrayList<>();
-            }
-            trips.add(tripNumber);
-            routeTrips.put(routeId, trips);
-
-            String trainTypeName = info.getTrip().getTrainTypeName();
-            trips = typeTrips.get(trainTypeName);
-            if(trips == null) {
-                trips = new ArrayList<>();
-            }
-            trips.add(tripNumber);
-            typeTrips.put(trainTypeName, trips);
         }
 
-        //List<String> invalidTrips = new ArrayList<>();
-
-        // check if station exist to exclude invalid travel info
+        // ========== 第二步：校验站点是否存在 ==========
         Map<String, String> stationMap = checkStationsExists(new ArrayList<>(stationNames), headers);
-        if(stationMap == null) {
+        if (stationMap == null || stationMap.isEmpty()) {
             response.setStatus(0);
             response.setMsg("all stations don't exist");
             return response;
         }
-        for(Map.Entry<String, String> s : stationMap.entrySet()){
-            if(s.getValue() == null ){
-                // station not exist
-                if(startTrips.get(s.getKey()) != null){
+        for (Map.Entry<String, String> s : stationMap.entrySet()) {
+            if (s.getValue() == null) {
+                // 站点不存在，移除关联行程
+                if (startTrips.containsKey(s.getKey())) {
                     avaTrips.removeAll(startTrips.get(s.getKey()));
                 }
-                if(endTrips.get(s.getKey()) != null){
+                if (endTrips.containsKey(s.getKey())) {
                     avaTrips.removeAll(endTrips.get(s.getKey()));
                 }
             }
         }
-
-        if(avaTrips.size() == 0){
+        if (avaTrips.isEmpty()) {
             response.setStatus(0);
             response.setMsg("no travel info available");
             return response;
         }
 
-        // check if train_type exist
+        // ========== 第三步：校验列车类型是否存在 ==========
         List<TrainType> tts = queryTrainTypeByNames(new ArrayList<>(trainTypeNames), headers);
-        if(tts == null){
+        if (tts == null || tts.isEmpty()) {
             response.setStatus(0);
             response.setMsg("all train_type don't exist");
             return response;
         }
         Map<String, TrainType> trainTypeMap = new HashMap<>();
-        for(TrainType t: tts){
+        for (TrainType t : tts) {
             trainTypeMap.put(t.getName(), t);
         }
-        for(Map.Entry<String, List<String>> typeTrip: typeTrips.entrySet()){
+        for (Map.Entry<String, List<String>> typeTrip : typeTrips.entrySet()) {
             String ttype = typeTrip.getKey();
-            if(trainTypeMap.get(ttype) == null){
+            if (!trainTypeMap.containsKey(ttype)) {
                 avaTrips.removeAll(typeTrip.getValue());
             }
         }
-        if(avaTrips.size() ==0){
+        if (avaTrips.isEmpty()) {
             response.setStatus(0);
             response.setMsg("no travel info available");
             return response;
         }
 
-        // check if route exist to exclude invalid travel info
+        // ========== 第四步：校验路线是否存在+站点逻辑 ==========
         List<Route> routes = getRoutesByRouteIds(new ArrayList<>(routeIds), headers);
-        if(routes == null) {
+        if (routes == null || routes.isEmpty()) {
             response.setStatus(0);
             response.setMsg("all routes don't exist");
             return response;
         }
         Map<String, Route> routeMap = new HashMap<>();
-        for(Route r: routes){
+        for (Route r : routes) {
             routeMap.put(r.getId(), r);
         }
-        for(Map.Entry<String, List<String>> routeTrip: routeTrips.entrySet()){
+        for (Map.Entry<String, List<String>> routeTrip : routeTrips.entrySet()) {
             String routeId = routeTrip.getKey();
-            if(routeMap.get(routeId) == null){
+            if (!routeMap.containsKey(routeId)) {
                 avaTrips.removeAll(routeTrip.getValue());
-            }else{
-                Route route = routeMap.get(routeId);
-                List<String> trips = routeTrip.getValue();
-                for(String t: trips){
-                    String start = tripInfos.get(t).getStartPlace();
-                    String end = tripInfos.get(t).getEndPlace();
-                    if (!route.getStations().contains(start) ||
-                            !route.getStations().contains(end) ||
-                            route.getStations().indexOf(start) >= route.getStations().indexOf(end)){
-                        avaTrips.remove(t);
-                    }
+                continue;
+            }
+
+            // 路线存在，校验站点逻辑
+            Route route = routeMap.get(routeId);
+            List<String> trips = routeTrip.getValue();
+            // 判空：路线的站点列表
+            if (route.getStations() == null || route.getStations().isEmpty()) {
+                LOGGER.warn("[queryForTravels][路线站点为空][routeId: {}]", routeId);
+                avaTrips.removeAll(trips);
+                continue;
+            }
+
+            for (String t : trips) {
+                // 判空：tripInfos中的行程数据
+                if (!tripInfos.containsKey(t)) {
+                    LOGGER.warn("[queryForTravels][行程数据不存在][tripNumber: {}]", t);
+                    avaTrips.remove(t);
+                    continue;
+                }
+                Travel tripInfo = tripInfos.get(t);
+                String start = tripInfo.getStartPlace();
+                String end = tripInfo.getEndPlace();
+
+                // 校验站点是否在路线中 + 起点索引 < 终点索引
+                int startIndex = route.getStations().indexOf(start);
+                int endIndex = route.getStations().indexOf(end);
+                if (startIndex == -1 || endIndex == -1 || startIndex >= endIndex) {
+                    avaTrips.remove(t);
                 }
             }
         }
-        if(avaTrips.size() == 0){
+        if (avaTrips.isEmpty()) {
             response.setStatus(0);
             response.setMsg("no travel info available");
             return response;
         }
 
+        // ========== 第五步：查询价格配置 ==========
         List<String> routeIdAndTypes = new ArrayList<>();
-        for(String tripNumber: avaTrips){
-            String routeId = tripInfos.get(tripNumber).getTrip().getRouteId();
-            String trainType = tripInfos.get(tripNumber).getTrip().getTrainTypeName();
-            routeIdAndTypes.add(routeId+":"+trainType);
+        for (String tripNumber : avaTrips) {
+            if (!tripInfos.containsKey(tripNumber)) {
+                continue;
+            }
+            Travel info = tripInfos.get(tripNumber);
+            Trip trip = info.getTrip();
+            if (trip == null) {
+                continue;
+            }
+            String routeId = trip.getRouteId();
+            String trainType = trip.getTrainTypeName();
+            if (routeId == null || trainType == null) {
+                continue;
+            }
+            routeIdAndTypes.add(routeId + ":" + trainType);
         }
         Map<String, PriceConfig> pcMap = queryPriceConfigByRouteIdsAndTrainTypes(routeIdAndTypes, headers);
 
+        // ========== 第六步：计算价格+组装返回结果 ==========
         Map<String, TravelResult> trMap = new HashMap<>();
-        for(String tripNumber: avaTrips){
-            Travel info = tripInfos.get(tripNumber);
-            String trainType = info.getTrip().getTrainTypeName();
-            String routeId = info.getTrip().getRouteId();
-            Route route = routeMap.get(routeId);
-
-            int indexStart = route.getStations().indexOf(info.getStartPlace());
-            int indexEnd = route.getStations().indexOf(info.getEndPlace());
-
-            double basicPriceRate = 0.75;
-            double firstPriceRate = 1;
-            PriceConfig priceConfig = pcMap.get(routeId+":"+trainType);
-            if(priceConfig != null){
-                basicPriceRate = priceConfig.getBasicPriceRate();
-                firstPriceRate = priceConfig.getFirstClassPriceRate();
-            }
-
-            HashMap<String, String> prices = new HashMap<>();
+        for (String tripNumber : avaTrips) {
             try {
-                int distance = 0;
-                distance = route.getDistances().get(indexEnd) - route.getDistances().get(indexStart);
-                /**
-                 * We need the price Rate and distance (starting station).
-                 */
-                double priceForEconomyClass = distance * basicPriceRate;
-                double priceForConfortClass = distance * firstPriceRate;
-                prices.put("economyClass", "" + priceForEconomyClass);
-                prices.put("confortClass", "" + priceForConfortClass);
-            }catch (Exception e){
-                prices.put("economyClass", "95.0");
-                prices.put("confortClass", "120.0");
+                if (!tripInfos.containsKey(tripNumber)) {
+                    continue;
+                }
+                Travel info = tripInfos.get(tripNumber);
+                Trip trip = info.getTrip();
+                if (trip == null) {
+                    continue;
+                }
+
+                String trainType = trip.getTrainTypeName();
+                String routeId = trip.getRouteId();
+                if (!routeMap.containsKey(routeId) || !trainTypeMap.containsKey(trainType)) {
+                    continue;
+                }
+
+                Route route = routeMap.get(routeId);
+                // 判空：路线的距离列表
+                if (route.getDistances() == null || route.getDistances().isEmpty()) {
+                    LOGGER.warn("[queryForTravels][路线距离为空][routeId: {}]", routeId);
+                    continue;
+                }
+
+                // 计算站点索引
+                int indexStart = route.getStations().indexOf(info.getStartPlace());
+                int indexEnd = route.getStations().indexOf(info.getEndPlace());
+                // 校验索引有效性
+                if (indexStart < 0 || indexEnd < 0 || indexStart >= indexEnd ||
+                        indexEnd >= route.getDistances().size() || indexStart >= route.getDistances().size()) {
+                    LOGGER.warn("[queryForTravels][站点索引无效][tripNumber: {}, start: {}, end: {}]",
+                            tripNumber, indexStart, indexEnd);
+                    continue;
+                }
+
+                // 价格计算
+                double basicPriceRate = 0.75;
+                double firstPriceRate = 1;
+                String priceKey = routeId + ":" + trainType;
+                if (pcMap.containsKey(priceKey)) {
+                    PriceConfig priceConfig = pcMap.get(priceKey);
+                    basicPriceRate = priceConfig.getBasicPriceRate();
+                    firstPriceRate = priceConfig.getFirstClassPriceRate();
+                }
+
+                HashMap<String, String> prices = new HashMap<>();
+                try {
+                    int distance = route.getDistances().get(indexEnd) - route.getDistances().get(indexStart);
+                    double priceForEconomyClass = distance * basicPriceRate;
+                    double priceForConfortClass = distance * firstPriceRate;
+                    prices.put("economyClass", String.format("%.2f", priceForEconomyClass)); // 格式化保留2位小数
+                    prices.put("confortClass", String.format("%.2f", priceForConfortClass));
+                } catch (Exception e) {
+                    LOGGER.warn("[queryForTravels][价格计算异常][tripNumber: {}]", tripNumber, e);
+                    prices.put("economyClass", "95.00");
+                    prices.put("confortClass", "120.00");
+                }
+
+                // 组装返回结果
+                TravelResult result = new TravelResult();
+                result.setStatus(true);
+                result.setTrainType(trainTypeMap.get(trainType));
+                result.setRoute(route);
+                result.setPrices(prices);
+                result.setPercent(1.0);
+
+                trMap.put(tripNumber, result);
+            } catch (Exception e) {
+                LOGGER.error("[queryForTravels][组装行程结果异常][tripNumber: {}]", tripNumber, e);
+                continue;
             }
-
-
-            TravelResult result = new TravelResult();
-            result.setStatus(true);
-            result.setTrainType(trainTypeMap.get(trainType));
-            result.setRoute(route);
-            result.setPrices(prices);
-            result.setPercent(1.0);
-
-            trMap.put(tripNumber, result);
         }
+
+        // ========== 第七步：返回最终结果 ==========
         response.setData(trMap);
-        BasicServiceImpl.LOGGER.info("[queryForTravels][all done][result map: {}]", trMap);
+        LOGGER.info("[queryForTravels][all done][有效行程数: {}, 结果映射: {}]", avaTrips.size(), trMap);
         return response;
     }
 

@@ -29,11 +29,13 @@ public class AuthController {
      * @return
      */
     @GetMapping("/hello")
+    // 🆗
     public String getHello() {
         return "hello";
     }
 
     @PostMapping
+    // 🆗
     public HttpEntity<Response> createDefaultUser(@RequestBody AuthDto authDto) {
         logger.info("[createDefaultUser][Create default auth user with authDto][AuthDto: {}]", authDto.toString());
         try {

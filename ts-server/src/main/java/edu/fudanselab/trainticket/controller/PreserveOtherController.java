@@ -24,12 +24,14 @@ public class PreserveOtherController {
     private static final Logger LOGGER = LoggerFactory.getLogger(PreserveOtherController.class);
 
     @GetMapping(path = "/welcome")
+    // 🆗
     public String home() {
         return "Welcome to [ PreserveOther Service ] !";
     }
 
     @CrossOrigin(origins = "*")
     @PostMapping(value = "/preserveOther")
+    // 🆗
     public HttpEntity preserve(@RequestBody OrderTicketsInfo oti,
                                @RequestHeader HttpHeaders headers) {
         PreserveOtherController.LOGGER.info("[preserve][Preserve Account order][from {} to {} at {}]", oti.getFrom(), oti.getTo(), oti.getDate());

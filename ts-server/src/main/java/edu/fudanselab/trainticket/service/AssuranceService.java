@@ -20,7 +20,7 @@ public interface AssuranceService {
      * @param headers headers
      * @return Response
      */
-    Response findAssuranceById(UUID id, HttpHeaders headers);
+    Response findAssuranceById(String id, HttpHeaders headers);
 
     /**
      * find assurance by order id
@@ -49,7 +49,7 @@ public interface AssuranceService {
      * @return Response
      */
     @Transactional
-    Response deleteById(UUID assuranceId, HttpHeaders headers);
+    Response deleteById(String assuranceId, HttpHeaders headers);
 
     /**
      * delete by order id

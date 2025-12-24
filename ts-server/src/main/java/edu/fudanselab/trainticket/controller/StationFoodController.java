@@ -22,19 +22,22 @@ public class StationFoodController {
     private static final Logger LOGGER = LoggerFactory.getLogger(StationFoodController.class);
 
     @GetMapping(path = "/stationfoodstores/welcome")
+    // 🆗
     public String home() {
         return "Welcome to [ Food store Service ] !";
     }
 
     @CrossOrigin(origins = "*")
     @GetMapping("/stationfoodstores")
+    // 🆗
     public HttpEntity getAllFoodStores(@RequestHeader HttpHeaders headers) {
         StationFoodController.LOGGER.info("[Food Map Service][Get All FoodStores]");
         return ok(stationFoodService.listFoodStores(headers));
     }
 
     @CrossOrigin(origins = "*")
-    @GetMapping("/stationfoodstores/{stationId}")
+    @GetMapping("/stationfoodstores/{stationName}")
+    // 🆗
     public HttpEntity getFoodStoresOfStation(@PathVariable String stationName, @RequestHeader HttpHeaders headers) {
         StationFoodController.LOGGER.info("[Food Map Service][Get FoodStores By StationName]");
         return ok(stationFoodService.listFoodStoresByStationName(stationName, headers));
@@ -42,11 +45,14 @@ public class StationFoodController {
 
     @CrossOrigin(origins = "*")
     @PostMapping("/stationfoodstores")
+    // 🆗
     public HttpEntity getFoodStoresByStationNames(@RequestBody List<String> stationNameList) {
         StationFoodController.LOGGER.info("[Food Map Service][Get FoodStores By StationNames]");
         return ok(stationFoodService.getFoodStoresByStationNames(stationNameList));
     }
+
     @GetMapping("/stationfoodstores/bystoreid/{stationFoodStoreId}")
+    // 🆗
     public HttpEntity getFoodListByStationFoodStoreId(@PathVariable String stationFoodStoreId, @RequestHeader HttpHeaders headers) {
         StationFoodController.LOGGER.info("[Food Map Service][Get Foodlist By stationFoodStoreId]");
         return ok(stationFoodService.getStaionFoodStoreById(stationFoodStoreId));
