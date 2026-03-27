@@ -1,0 +1,44 @@
+# 仅启动依赖服务，ts-server 本地运行
+# 使用方式: docker-compose -f docker-compose-without-server.yml up -d
+
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-train-ticket}
+      - MYSQL_USER=${MYSQL_USER:-trainticket}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-test@123}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-test@123}
+    ports:
+      - "3307:3306"
+    expose:
+      - "3306"
+    volumes:
+      - my-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      timeout: 5s
+      retries: 10
+      interval: 10s
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3.8.19-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  ts-ui-dashboard:
+    build: ts-ui-dashboard
+    restart: always
+    ports:
+      - 3000:8080
+
+volumes:
+  my-db:
+    driver: local
+  rabbitmq_data:
+    driver: local
